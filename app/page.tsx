@@ -5,70 +5,90 @@ import { getFeedPosts } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+export default async function LandingPage() {
   const posts = await getFeedPosts();
+  const featuredPosts = posts.slice(0, 3);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
-        <div className="space-y-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#ffb073]">Milestone 1</p>
-          <h1 className="max-w-3xl text-5xl font-black uppercase leading-[0.92] tracking-[-0.04em] text-[#fff5ea] sm:text-7xl">
-            Recipes for the triumphs, the flops, and the almost-edible.
+    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+      <section className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+        <div className="space-y-6">
+          <p className="text-sm uppercase tracking-[0.24em] text-[color:rgba(83,19,30,0.68)]">Social Cookbook</p>
+          <h1 className="font-display max-w-xl text-[2.8rem] leading-[1.02] text-[var(--oxblood)] sm:text-[3.6rem]">
+            Keep the good dishes. Keep the burnt ones too.
           </h1>
-          <p className="max-w-2xl text-lg leading-8 text-[#f8ebd8]/74">
-            Simmer is where home cooking gets honest. Post the dish photo, score how it really turned out, and keep the
-            full recipe attached so friends can learn from the win or avoid the smoke.
+          <p className="max-w-lg text-lg leading-8 text-[color:rgba(61,45,51,0.78)]">
+            A running table of what everyone cooked, loved, ruined, and tried again.
           </p>
-        </div>
-        <div className="rounded-[32px] border border-[#ff8552]/20 bg-[#221b17] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.2)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#ffb073]">The Loop</p>
-          <div className="mt-4 grid gap-3 text-[#fff5ea]">
-            <div className="rounded-2xl bg-[#17120f] p-4">1. Sign in and post what you made.</div>
-            <div className="rounded-2xl bg-[#17120f] p-4">2. Rate the result from 1 to 10.</div>
-            <div className="rounded-2xl bg-[#17120f] p-4">3. Browse the feed and open full recipes.</div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/dashboard"
+              className="btn-primary rounded-full px-6 py-3 text-sm font-semibold transition"
+            >
+              View Dashboard
+            </Link>
+            <Link
+              href="/post/new"
+              className="btn-secondary rounded-full px-6 py-3 text-sm font-semibold transition hover:bg-[color:rgba(181,214,178,0.38)]"
+            >
+              Add a Recipe
+            </Link>
           </div>
-          <Link
-            href="/post/new"
-            className="mt-6 inline-flex rounded-full bg-[#ff8552] px-5 py-3 text-sm font-bold text-[#1d1712] transition hover:bg-[#ffa16d]"
-          >
-            Post tonight&apos;s experiment
-          </Link>
+        </div>
+
+        <div className="paper-panel relative overflow-hidden rounded-[36px] p-4 sm:p-6">
+          <div className="paper-inset rounded-[28px] border border-[color:rgba(83,19,30,0.08)] bg-[color:rgba(255,255,255,0.32)] p-4 sm:p-5">
+            {featuredPosts.length ? (
+              <div className="grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
+                <Link href={`/posts/${featuredPosts[0].id}`} className="group block overflow-hidden rounded-[24px]">
+                  <img
+                    src={featuredPosts[0].photoUrl}
+                    alt={featuredPosts[0].notes ?? "Recipe post photo"}
+                    className="h-[22rem] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                  />
+                </Link>
+                <div className="grid gap-4">
+                  {featuredPosts.slice(1).map((post) => (
+                    <Link key={post.id} href={`/posts/${post.id}`} className="group block overflow-hidden rounded-[24px]">
+                      <img
+                        src={post.photoUrl}
+                        alt={post.notes ?? "Recipe post photo"}
+                        className="h-[10.5rem] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                      />
+                    </Link>
+                  ))}
+                  {featuredPosts.length === 1 ? <div className="rounded-[24px] bg-[color:rgba(255,255,255,0.3)]" /> : null}
+                </div>
+              </div>
+            ) : (
+              <div className="flex min-h-[24rem] items-center justify-center rounded-[28px] border border-dashed border-[var(--line)] bg-[color:rgba(255,255,255,0.26)]">
+                <Link href="/post/new" className="btn-primary rounded-full px-6 py-3 text-sm font-semibold">
+                  Start the first post
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
-      <section className="mt-12">
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#f8ebd8]/55">Latest cooks</p>
-            <h2 className="text-2xl font-bold text-[#fff5ea]">Fresh from the stove</h2>
+      {posts.length ? (
+        <section className="mt-16">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-sm uppercase tracking-[0.24em] text-[color:rgba(83,19,30,0.68)]">Recent</p>
+              <h2 className="font-display text-3xl text-[var(--oxblood)]">From the book</h2>
+            </div>
+            <Link href="/dashboard" className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--oxblood)]">
+              Open all
+            </Link>
           </div>
-          <p className="text-sm text-[#f8ebd8]/55">{posts.length} post{posts.length === 1 ? "" : "s"}</p>
-        </div>
-
-        {posts.length ? (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {posts.map((post) => (
+            {posts.slice(0, 3).map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
-        ) : (
-          <div className="rounded-[32px] border border-dashed border-[#ff8552]/30 bg-[#1a1512]/80 p-10 text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#ffb073]">No posts yet</p>
-            <h3 className="mt-3 text-3xl font-black text-[#fff5ea]">Start the feed with your first dish.</h3>
-            <p className="mx-auto mt-3 max-w-xl text-[#f8ebd8]/70">
-              The first recipe sets the tone. A perfect 10 is welcome. A chaotic 3 with a lesson learned might be even
-              better.
-            </p>
-            <Link
-              href="/post/new"
-              className="mt-6 inline-flex rounded-full border border-[#ff8552]/50 px-5 py-3 text-sm font-bold text-[#fff5ea] transition hover:border-[#ff8552]"
-            >
-              Create the first post
-            </Link>
-          </div>
-        )}
-      </section>
+        </section>
+      ) : null}
     </main>
   );
 }

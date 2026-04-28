@@ -9,7 +9,7 @@ export function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex items-center justify-center rounded-full bg-[#ff8552] px-6 py-3 text-sm font-bold text-[#1f1813] transition hover:bg-[#ffa16d] disabled:cursor-not-allowed disabled:opacity-60"
+      className="btn-primary inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Posting..." : "Publish Recipe"}
     </button>

@@ -22,13 +22,13 @@ function RepeaterField({ name, label, placeholder }: RepeaterFieldProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-semibold uppercase tracking-[0.16em] text-[#f8ebd8]/75">{label}</label>
+        <label className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:rgba(83,19,30,0.72)]">{label}</label>
         <button
           type="button"
           onClick={() => setItems((current) => [...current, ""])}
-          className="text-sm font-semibold text-[#ffb073]"
+          className="text-sm font-semibold text-[var(--oxblood)]"
         >
-          Add line
+          Add
         </button>
       </div>
       <div className="space-y-3">
@@ -38,15 +38,15 @@ function RepeaterField({ name, label, placeholder }: RepeaterFieldProps) {
               name={name}
               defaultValue={value}
               placeholder={`${placeholder} ${index + 1}`}
-              className="w-full rounded-2xl border border-white/10 bg-[#1a1512] px-4 py-3 text-[#fff5ea] outline-none transition placeholder:text-[#f8ebd8]/35 focus:border-[#ff8552]"
+              className="w-full rounded-2xl border border-[color:rgba(90,70,76,0.14)] bg-[color:rgba(255,250,204,0.48)] px-4 py-3 text-[var(--ink)] outline-none transition focus:border-[var(--oxblood)]"
             />
             {items.length > 1 ? (
               <button
                 type="button"
                 onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-[#f8ebd8]/70"
+                className="rounded-2xl border border-[color:rgba(90,70,76,0.14)] px-4 py-3 text-sm text-[color:rgba(90,70,76,0.78)]"
               >
-                Remove
+                Cut
               </button>
             ) : null}
           </div>
@@ -61,7 +61,7 @@ function FieldError({ errors }: { errors?: string[] }) {
     return null;
   }
 
-  return <p className="text-sm text-[#ff9f90]">{errors[0]}</p>;
+  return <p className="text-sm text-[var(--oxblood)]">{errors[0]}</p>;
 }
 
 export function CreatePostForm() {
@@ -71,18 +71,18 @@ export function CreatePostForm() {
     <form action={formAction} className="space-y-8">
       <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="space-y-3">
-          <label className="text-sm font-semibold uppercase tracking-[0.16em] text-[#f8ebd8]/75">Dish Photo</label>
+          <label className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:rgba(83,19,30,0.72)]">Photo</label>
           <input
             type="file"
             name="photo"
             accept="image/*"
-            className="block w-full rounded-[24px] border border-dashed border-[#ff8552]/35 bg-[#1a1512] px-4 py-10 text-sm text-[#f8ebd8]/70 file:mr-4 file:rounded-full file:border-0 file:bg-[#ff8552] file:px-4 file:py-2 file:font-semibold file:text-[#1f1813]"
+            className="block w-full rounded-[24px] border border-dashed border-[color:rgba(83,19,30,0.22)] bg-[color:rgba(255,250,204,0.44)] px-4 py-10 text-sm text-[color:rgba(90,70,76,0.78)] file:mr-4 file:rounded-full file:border-0 file:bg-[var(--oxblood)] file:px-4 file:py-2 file:font-semibold file:text-[var(--cream)]"
           />
           <FieldError errors={state.fieldErrors?.photo} />
         </div>
 
         <div className="space-y-3">
-          <label htmlFor="rating" className="text-sm font-semibold uppercase tracking-[0.16em] text-[#f8ebd8]/75">
+          <label htmlFor="rating" className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:rgba(83,19,30,0.72)]">
             Rating
           </label>
           <input
@@ -92,23 +92,21 @@ export function CreatePostForm() {
             min={1}
             max={10}
             placeholder="7"
-            className="w-full rounded-[24px] border border-white/10 bg-[#1a1512] px-4 py-4 text-4xl font-black text-[#fff5ea] outline-none transition placeholder:text-[#f8ebd8]/20 focus:border-[#ff8552]"
+            className="w-full rounded-[24px] border border-[color:rgba(90,70,76,0.14)] bg-[color:rgba(181,214,178,0.34)] px-4 py-4 text-4xl font-black text-[var(--oxblood)] outline-none transition focus:border-[var(--oxblood)]"
           />
-          <p className="text-sm text-[#f8ebd8]/55">Score the actual result, not your ambition.</p>
           <FieldError errors={state.fieldErrors?.rating} />
         </div>
       </div>
 
       <div className="space-y-3">
-        <label htmlFor="notes" className="text-sm font-semibold uppercase tracking-[0.16em] text-[#f8ebd8]/75">
+        <label htmlFor="notes" className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:rgba(83,19,30,0.72)]">
           Notes
         </label>
         <textarea
           id="notes"
           name="notes"
           rows={4}
-          placeholder="What worked? What burned? What would you change next time?"
-          className="w-full rounded-[24px] border border-white/10 bg-[#1a1512] px-4 py-4 text-[#fff5ea] outline-none transition placeholder:text-[#f8ebd8]/35 focus:border-[#ff8552]"
+          className="w-full rounded-[24px] border border-[color:rgba(90,70,76,0.14)] bg-[color:rgba(255,250,204,0.48)] px-4 py-4 text-[var(--ink)] outline-none transition focus:border-[var(--oxblood)]"
         />
         <FieldError errors={state.fieldErrors?.notes} />
       </div>
@@ -119,10 +117,9 @@ export function CreatePostForm() {
       <RepeaterField name="steps" label="Steps" placeholder="Describe step" />
       <FieldError errors={state.fieldErrors?.steps} />
 
-      {state.message ? <p className="rounded-2xl border border-[#ff9f90]/20 bg-[#3a1f1a] px-4 py-3 text-sm text-[#ffd2cc]">{state.message}</p> : null}
+      {state.message ? <p className="rounded-2xl border border-[color:rgba(83,19,30,0.16)] bg-[color:rgba(255,250,204,0.65)] px-4 py-3 text-sm text-[var(--oxblood)]">{state.message}</p> : null}
 
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-[#f8ebd8]/55">One photo, one honest score, one recipe worth sharing.</p>
+      <div className="flex items-center justify-end gap-4">
         <SubmitButton />
       </div>
     </form>

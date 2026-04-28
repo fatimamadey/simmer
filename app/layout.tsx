@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Fraunces, Newsreader } from "next/font/google";
 
 import { Header } from "@/components/header";
 import "@/app/globals.css";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces"
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-newsreader"
+});
 
 export const metadata: Metadata = {
   title: "Simmer",
@@ -13,8 +24,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <ClerkProvider>
       <html lang="en">
-        <body>
-          <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,133,82,0.24),_transparent_34%),linear-gradient(180deg,_#17120f_0%,_#0f0b09_100%)] text-[#fff5ea]">
+        <body className={`${fraunces.variable} ${newsreader.variable}`}>
+          <div className="min-h-screen text-[var(--ink)]">
             <Header />
             {children}
           </div>

@@ -13,23 +13,23 @@ function formatDate(dateString: string) {
 
 export function PostCard({ post }: { post: PostSummary }) {
   return (
-    <article className="overflow-hidden rounded-[28px] border border-white/10 bg-[#221c18] shadow-[0_20px_80px_rgba(0,0,0,0.18)]">
-      <img src={post.photoUrl} alt={post.notes ?? "Recipe post photo"} className="h-80 w-full object-cover" />
+    <article className="paper-panel overflow-hidden rounded-[26px] transition duration-300 hover:-translate-y-1 hover:shadow-[0_26px_56px_rgba(83,19,30,0.14)]">
+      <img src={post.photoUrl} alt={post.notes ?? "Recipe post photo"} className="h-96 w-full object-cover" />
       <div className="space-y-4 p-5">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.16em] text-[#f8ebd8]/60">@{post.author.username}</p>
-            <p className="text-lg font-semibold text-[#fff5ea]">{post.author.displayName ?? post.author.username}</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[color:rgba(90,70,76,0.72)]">@{post.author.username}</p>
+            <p className="font-display text-xl text-[var(--oxblood)]">{post.author.displayName ?? post.author.username}</p>
           </div>
-          <div className="rounded-full bg-[#ff8552] px-4 py-2 text-lg font-black text-[#1a1410]">{post.rating}/10</div>
+          <div className="rounded-full bg-[var(--sage)] px-4 py-2 text-lg font-black text-[var(--oxblood)]">{post.rating}/10</div>
         </div>
-        <p className="line-clamp-3 min-h-[4.5rem] text-base leading-7 text-[#f8ebd8]/88">
-          {post.notes?.trim() || "No notes, just vibes and a hot pan."}
+        <p className="line-clamp-3 min-h-[4.5rem] text-[1.02rem] leading-7 text-[color:rgba(61,45,51,0.78)]">
+          {post.notes?.trim() || ""}
         </p>
-        <div className="flex items-center justify-between text-sm text-[#f8ebd8]/55">
+        <div className="flex items-center justify-between text-sm text-[color:rgba(90,70,76,0.76)]">
           <span>{formatDate(post.createdAt)}</span>
-          <Link href={`/posts/${post.id}`} className="font-semibold text-[#ffb073]">
-            See recipe
+          <Link href={`/posts/${post.id}`} className="font-semibold text-[var(--oxblood)]">
+            Open
           </Link>
         </div>
       </div>

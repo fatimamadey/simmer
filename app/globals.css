@@ -1,7 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+  --sage: #b5d6b2;
+  --oxblood: #53131e;
+  --mauve-bark: #5a464c;
+  --cream: #fffacc;
+  --butter: #ffefbd;
+  --paper: #fffdf2;
+  --ink: #3d2d33;
+  --line: rgba(83, 19, 30, 0.16);
+  --shadow: rgba(83, 19, 30, 0.1);
 }
 
 * {
@@ -14,7 +23,12 @@ html {
 
 body {
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-newsreader), Georgia, serif;
+  background:
+    radial-gradient(circle at top left, rgba(181, 214, 178, 0.58), transparent 30%),
+    radial-gradient(circle at top right, rgba(255, 239, 189, 0.75), transparent 24%),
+    linear-gradient(180deg, var(--paper) 0%, var(--cream) 100%);
+  color: var(--ink);
 }
 
 a {
@@ -22,8 +36,60 @@ a {
   text-decoration: none;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+button,
+.font-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+}
+
+.font-script {
+  font-family: var(--font-fraunces), Georgia, serif;
+}
+
 button,
 input,
 textarea {
   font: inherit;
+}
+
+input,
+textarea {
+  font-family: var(--font-newsreader), Georgia, serif;
+}
+
+.paper-panel {
+  background: linear-gradient(180deg, rgba(255, 253, 242, 0.92), rgba(255, 250, 204, 0.74));
+  border: 1px solid var(--line);
+  box-shadow: 0 20px 45px var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.paper-inset {
+  box-shadow: inset 0 0 0 1px rgba(83, 19, 30, 0.1);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, rgba(255, 250, 204, 0.98), rgba(255, 239, 189, 0.96));
+  color: var(--oxblood);
+  border: 1px solid rgba(83, 19, 30, 0.18);
+  box-shadow: 0 10px 24px rgba(83, 19, 30, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(180deg, rgba(181, 214, 178, 0.92), rgba(181, 214, 178, 0.84));
+}
+
+.btn-secondary {
+  background: rgba(255, 253, 242, 0.72);
+  color: var(--oxblood);
+  border: 1px solid rgba(83, 19, 30, 0.16);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--mauve-bark) 42%, transparent);
 }
