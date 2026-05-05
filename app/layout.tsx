@@ -1,18 +1,24 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Fraunces, Newsreader } from "next/font/google";
+import { Playfair_Display, DM_Sans, Caveat } from "next/font/google";
 
 import { Header } from "@/components/header";
 import "@/app/globals.css";
 
-const fraunces = Fraunces({
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-fraunces"
+  variable: "--font-playfair",
+  style: ["normal", "italic"]
 });
 
-const newsreader = Newsreader({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-newsreader"
+  variable: "--font-dm-sans"
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-caveat"
 });
 
 export const metadata: Metadata = {
@@ -24,7 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${fraunces.variable} ${newsreader.variable}`}>
+        <body className={`${playfair.variable} ${dmSans.variable} ${caveat.variable}`}>
           <div className="min-h-screen text-[var(--ink)]">
             <Header />
             {children}

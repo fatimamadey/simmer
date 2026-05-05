@@ -1,36 +1,46 @@
 import Link from "next/link";
 
 import type { PostSummary } from "@/lib/types";
+import { RatingPips } from "@/components/rating-pips";
 
 function formatDate(dateString: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit"
+    day: "numeric"
   }).format(new Date(dateString));
 }
 
 export function PostCard({ post }: { post: PostSummary }) {
   return (
-    <article className="paper-panel relative overflow-hidden rounded-[26px] transition duration-300 hover:-translate-y-1 hover:shadow-[0_26px_56px_rgba(83,19,30,0.14)]">
-      {/* Stretched link covers the full card */}
-      <Link href={`/posts/${post.id}`} className="absolute inset-0 z-0 rounded-[26px]" aria-label={post.title} />
-      <img src={post.photoUrl} alt={post.title} className="h-96 w-full object-cover" />
+    <article className="recipe-card paper-panel relative overflow-hidden rounded-[22px]">
+      <Link href={`/posts/${post.id}`} className="absolute inset-0 z-0 rounded-[22px]" aria-label={post.title} />
+      <img src={post.photoUrl} alt={post.title} className="h-80 w-full object-cover" />
       <div className="space-y-3 p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <Link href={`/profile/${post.author.username}`} className="relative z-10 text-xs uppercase tracking-[0.18em] text-[color:rgba(90,70,76,0.72)] hover:text-[var(--oxblood)]">
-              @{post.author.username}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <Link
+              href={`/profile/${post.author.username}`}
+              className="relative z-10 text-xs font-medium uppercase tracking-[0.16em] text-[color:rgba(90,70,76,0.6)] hover:text-[var(--oxblood)]"
+            >
+              {post.author.displayName ?? post.author.username}
             </Link>
-            <p className="font-display text-xl text-[var(--oxblood)]">{post.title}</p>
+            <p className="font-display mt-0.5 text-lg italic leading-tight text-[var(--oxblood)]">{post.title}</p>
           </div>
-          <div className="relative z-10 rounded-full bg-[var(--sage)] px-4 py-2 text-lg font-black text-[var(--oxblood)]">{post.rating}/10</div>
+          <div className="relative z-10 shrink-0 text-right">
+            <p className="font-display text-2xl font-bold leading-none text-[var(--oxblood)]">{post.rating}</p>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-[color:rgba(83,19,30,0.45)]">/ 10</p>
+          </div>
         </div>
+
+        <RatingPips rating={post.rating} size="sm" />
+
         {post.notes?.trim() ? (
-          <p className="line-clamp-2 text-[1.02rem] leading-7 text-[color:rgba(61,45,51,0.78)]">{post.notes.trim()}</p>
+          <p className="font-handwritten line-clamp-2 text-[1.05rem] leading-snug text-[color:rgba(46,32,24,0.72)]">
+            {post.notes.trim()}
+          </p>
         ) : null}
-        <p className="text-sm text-[color:rgba(90,70,76,0.72)]">{formatDate(post.createdAt)}</p>
+
+        <p className="text-xs font-medium text-[color:rgba(90,70,76,0.55)]">{formatDate(post.createdAt)}</p>
       </div>
     </article>
   );

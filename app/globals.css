@@ -7,10 +7,10 @@
   --mauve-bark: #5a464c;
   --cream: #fffacc;
   --butter: #ffefbd;
-  --paper: #fffdf2;
-  --ink: #3d2d33;
-  --line: rgba(83, 19, 30, 0.16);
-  --shadow: rgba(83, 19, 30, 0.1);
+  --paper: #fdf8ee;
+  --ink: #2e2018;
+  --line: rgba(83, 19, 30, 0.13);
+  --shadow: rgba(83, 19, 30, 0.08);
 }
 
 * {
@@ -23,12 +23,22 @@ html {
 
 body {
   margin: 0;
-  font-family: var(--font-newsreader), Georgia, serif;
-  background:
-    radial-gradient(circle at top left, rgba(181, 214, 178, 0.58), transparent 30%),
-    radial-gradient(circle at top right, rgba(255, 239, 189, 0.75), transparent 24%),
-    linear-gradient(180deg, var(--paper) 0%, var(--cream) 100%);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  background-color: var(--paper);
   color: var(--ink);
+}
+
+/* Grain texture overlay — makes it feel like paper */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.038;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  mix-blend-mode: multiply;
 }
 
 a {
@@ -42,56 +52,77 @@ h3,
 h4,
 h5,
 h6,
-button,
 .font-display {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-playfair), Georgia, serif;
 }
 
-.font-script {
-  font-family: var(--font-fraunces), Georgia, serif;
+.font-handwritten {
+  font-family: var(--font-caveat), cursive;
 }
 
-button,
+button {
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+}
+
 input,
 textarea {
-  font: inherit;
-}
-
-input,
-textarea {
-  font-family: var(--font-newsreader), Georgia, serif;
-}
-
-.paper-panel {
-  background: linear-gradient(180deg, rgba(255, 253, 242, 0.92), rgba(255, 250, 204, 0.74));
-  border: 1px solid var(--line);
-  box-shadow: 0 20px 45px var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
-}
-
-.paper-inset {
-  box-shadow: inset 0 0 0 1px rgba(83, 19, 30, 0.1);
-}
-
-.btn-primary {
-  background: linear-gradient(180deg, rgba(255, 250, 204, 0.98), rgba(255, 239, 189, 0.96));
-  color: var(--oxblood);
-  border: 1px solid rgba(83, 19, 30, 0.18);
-  box-shadow: 0 10px 24px rgba(83, 19, 30, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.45);
-}
-
-.btn-primary:hover {
-  background: linear-gradient(180deg, rgba(181, 214, 178, 0.92), rgba(181, 214, 178, 0.84));
-}
-
-.btn-secondary {
-  background: rgba(255, 253, 242, 0.72);
-  color: var(--oxblood);
-  border: 1px solid rgba(83, 19, 30, 0.16);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: color-mix(in srgb, var(--mauve-bark) 42%, transparent);
+  color: color-mix(in srgb, var(--mauve-bark) 38%, transparent);
+}
+
+/* Card — feels like an actual recipe card with subtle depth */
+.paper-panel {
+  background: rgba(253, 250, 242, 0.98);
+  border: 1.5px solid rgba(83, 19, 30, 0.1);
+  box-shadow:
+    0 2px 4px rgba(83, 19, 30, 0.04),
+    0 8px 24px rgba(83, 19, 30, 0.08),
+    0 24px 48px rgba(83, 19, 30, 0.06);
+}
+
+.paper-inset {
+  box-shadow: inset 0 0 0 1.5px rgba(83, 19, 30, 0.08);
+}
+
+/* Recipe card rotation — analog scrapbook feel */
+.recipe-card:nth-child(3n + 1) { transform: rotate(-0.7deg); }
+.recipe-card:nth-child(3n + 2) { transform: rotate(0.5deg); }
+.recipe-card:nth-child(3n)     { transform: rotate(-0.3deg); }
+
+.recipe-card {
+  transition: transform 280ms ease, box-shadow 280ms ease;
+}
+
+.recipe-card:hover {
+  transform: rotate(0deg) translateY(-5px) !important;
+  box-shadow:
+    0 2px 4px rgba(83, 19, 30, 0.04),
+    0 16px 40px rgba(83, 19, 30, 0.14),
+    0 32px 64px rgba(83, 19, 30, 0.09) !important;
+}
+
+.btn-primary {
+  background: linear-gradient(160deg, rgba(255, 250, 204, 0.98), rgba(255, 235, 180, 0.96));
+  color: var(--oxblood);
+  border: 1.5px solid rgba(83, 19, 30, 0.16);
+  box-shadow: 0 2px 8px rgba(83, 19, 30, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(160deg, rgba(181, 214, 178, 0.9), rgba(155, 196, 152, 0.86));
+}
+
+.btn-secondary {
+  background: rgba(253, 248, 238, 0.8);
+  color: var(--oxblood);
+  border: 1.5px solid rgba(83, 19, 30, 0.14);
+  font-weight: 500;
 }
 
 /* Suppress Clerk development mode floating badge */
