@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 
 import { getPostById, getProfileByClerkUserId } from "@/lib/data";
-import { deletePostAction } from "@/lib/actions";
+import { DeletePostButton } from "@/components/delete-post-button";
 
 function formatDate(dateString: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -24,7 +24,6 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
   if (!post) notFound();
 
   const isAuthor = viewerProfile?.id === post.authorProfileId;
-  const boundDelete = deletePostAction.bind(null, post.id);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
@@ -40,17 +39,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
             >
               Edit
             </Link>
-            <form action={boundDelete}>
-              <button
-                type="submit"
-                className="rounded-full border border-[color:rgba(83,19,30,0.22)] bg-transparent px-4 py-2 text-sm font-semibold text-[var(--oxblood)] transition hover:bg-[color:rgba(83,19,30,0.06)]"
-                onClick={(e) => {
-                  if (!confirm("Delete this post? This can't be undone.")) e.preventDefault();
-                }}
-              >
-                Delete
-              </button>
-            </form>
+            <DeletePostButton postId={post.id} />
           </div>
         ) : null}
       </div>
