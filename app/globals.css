@@ -93,3 +93,10 @@ input::placeholder,
 textarea::placeholder {
   color: color-mix(in srgb, var(--mauve-bark) 42%, transparent);
 }
+
+/* Suppress Clerk development mode floating badge */
+.cl-devBadge,
+[data-clerk-badge],
+#clerk-components > div:last-child {
+  display: none !important;
+}

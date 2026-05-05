@@ -18,8 +18,8 @@ export async function Header() {
           <Link href="/" className="transition hover:text-[var(--oxblood)]">
             Home
           </Link>
-          <Link href="/dashboard" className="transition hover:text-[var(--oxblood)]">
-            Dashboard
+          <Link href="/feed" className="transition hover:text-[var(--oxblood)]">
+            Feed
           </Link>
           <Link href="/search" className="transition hover:text-[var(--oxblood)]">
             Search

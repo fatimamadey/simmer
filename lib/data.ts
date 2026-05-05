@@ -5,6 +5,7 @@ import type { PostDetail, PostSummary, Profile, ProfileStats } from "@/lib/types
 
 type PostRow = {
   id: string;
+  profile_id: string;
   title: string;
   rating: number;
   notes: string | null;
@@ -31,7 +32,7 @@ function rowToPostSummary(row: PostRow): PostSummary {
   };
 }
 
-const POST_SELECT = "id, title, rating, notes, photo_url, created_at, profiles(username, display_name)";
+const POST_SELECT = "id, profile_id, title, rating, notes, photo_url, created_at, profiles(username, display_name)";
 
 export async function getFeedPosts(): Promise<PostSummary[]> {
   const supabase = createSupabaseAdminClient();
@@ -92,6 +93,7 @@ export async function getPostById(postId: string): Promise<PostDetail | null> {
 
   return {
     ...rowToPostSummary(typedPost),
+    authorProfileId: typedPost.profile_id,
     ingredients: (ingredients ?? []).map((item) => item.content),
     steps: (steps ?? []).map((item) => item.content)
   };

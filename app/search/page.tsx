@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { searchProfiles, isFollowing, getProfileByClerkUserId } from "@/lib/data";
 import { FollowButton } from "@/components/follow-button";
+import { SearchInput } from "@/components/search-input";
 
 export const dynamic = "force-dynamic";
 
@@ -37,23 +38,9 @@ export default async function SearchPage({
         <h1 className="font-display text-4xl text-[var(--oxblood)]">Search</h1>
       </div>
 
-      <form method="get" className="mb-8">
-        <div className="flex gap-3">
-          <input
-            type="text"
-            name="q"
-            defaultValue={query}
-            placeholder="Search by username or name..."
-            className="w-full rounded-[24px] border border-[color:rgba(90,70,76,0.14)] bg-[color:rgba(255,250,204,0.48)] px-5 py-4 text-[var(--ink)] outline-none transition focus:border-[var(--oxblood)]"
-          />
-          <button
-            type="submit"
-            className="btn-primary rounded-full px-6 py-4 text-sm font-semibold transition"
-          >
-            Search
-          </button>
-        </div>
-      </form>
+      <div className="mb-8">
+        <SearchInput defaultValue={query} />
+      </div>
 
       {query && profiles.length === 0 ? (
         <div className="paper-panel rounded-[28px] p-10 text-center text-[color:rgba(61,45,51,0.72)]">
@@ -83,10 +70,7 @@ export default async function SearchPage({
                   </div>
                 </Link>
                 {!isOwn && viewerProfile ? (
-                  <FollowButton
-                    followingProfileId={profile.id}
-                    initialIsFollowing={followMap[profile.id] ?? false}
-                  />
+                  <FollowButton followingProfileId={profile.id} initialIsFollowing={followMap[profile.id] ?? false} />
                 ) : null}
               </li>
             );

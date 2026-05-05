@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 
-import { getPostById } from "@/lib/data";
+import { getPostById, getProfileByClerkUserId } from "@/lib/data";
+import { deletePostAction } from "@/lib/actions";
 
 function formatDate(dateString: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -12,16 +14,49 @@ function formatDate(dateString: string) {
 
 export default async function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const post = await getPostById(id);
+  const { userId } = await auth();
 
-  if (!post) {
-    notFound();
-  }
+  const [post, viewerProfile] = await Promise.all([
+    getPostById(id),
+    userId ? getProfileByClerkUserId(userId) : Promise.resolve(null)
+  ]);
+
+  if (!post) notFound();
+
+  const isAuthor = viewerProfile?.id === post.authorProfileId;
+  const boundDelete = deletePostAction.bind(null, post.id);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <Link href="/feed" className="text-sm font-semibold uppercase tracking-[0.14em] text-[color:rgba(90,70,76,0.72)] hover:text-[var(--oxblood)]">
+          ← Feed
+        </Link>
+        {isAuthor ? (
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/post/${post.id}/edit`}
+              className="btn-secondary rounded-full px-4 py-2 text-sm font-semibold transition"
+            >
+              Edit
+            </Link>
+            <form action={boundDelete}>
+              <button
+                type="submit"
+                className="rounded-full border border-[color:rgba(83,19,30,0.22)] bg-transparent px-4 py-2 text-sm font-semibold text-[var(--oxblood)] transition hover:bg-[color:rgba(83,19,30,0.06)]"
+                onClick={(e) => {
+                  if (!confirm("Delete this post? This can't be undone.")) e.preventDefault();
+                }}
+              >
+                Delete
+              </button>
+            </form>
+          </div>
+        ) : null}
+      </div>
+
       <section className="grid gap-8 lg:grid-cols-[1fr_0.9fr]">
-        <img src={post.photoUrl} alt={post.notes ?? "Recipe post photo"} className="h-full min-h-[24rem] w-full rounded-[32px] object-cover" />
+        <img src={post.photoUrl} alt={post.title} className="h-full min-h-[24rem] w-full rounded-[32px] object-cover" />
 
         <div className="paper-panel space-y-6 rounded-[32px] p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4">
@@ -37,11 +72,11 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
             <div className="rounded-full bg-[var(--sage)] px-5 py-3 text-2xl font-black text-[var(--oxblood)]">{post.rating}/10</div>
           </div>
 
-          <div className="paper-inset rounded-[24px] bg-[color:rgba(255,239,189,0.72)] p-5">
-            <p className="mt-1 text-lg leading-8 text-[color:rgba(61,45,51,0.84)]">
-              {post.notes?.trim() || ""}
-            </p>
-          </div>
+          {post.notes?.trim() ? (
+            <div className="paper-inset rounded-[24px] bg-[color:rgba(255,239,189,0.72)] p-5">
+              <p className="text-lg leading-8 text-[color:rgba(61,45,51,0.84)]">{post.notes.trim()}</p>
+            </div>
+          ) : null}
 
           <div className="grid gap-6 sm:grid-cols-2">
             <section>

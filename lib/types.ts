@@ -24,6 +24,7 @@ export type PostSummary = {
 };
 
 export type PostDetail = PostSummary & {
+  authorProfileId: string;
   ingredients: string[];
   steps: string[];
 };

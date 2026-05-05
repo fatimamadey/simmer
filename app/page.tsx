@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { SignUpButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 
 import { PostCard } from "@/components/post-card";
 import { getFeedPosts } from "@/lib/data";
@@ -8,6 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function LandingPage() {
   const posts = await getFeedPosts();
   const featuredPosts = posts.slice(0, 3);
+  const { userId } = await auth();
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
@@ -21,18 +24,27 @@ export default async function LandingPage() {
             A running table of what everyone cooked, loved, ruined, and tried again.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link
-              href="/dashboard"
-              className="btn-primary rounded-full px-6 py-3 text-sm font-semibold transition"
-            >
-              View Dashboard
-            </Link>
-            <Link
-              href="/post/new"
-              className="btn-secondary rounded-full px-6 py-3 text-sm font-semibold transition hover:bg-[color:rgba(181,214,178,0.38)]"
-            >
-              Add a Recipe
-            </Link>
+            {userId ? (
+              <>
+                <Link href="/feed" className="btn-primary rounded-full px-6 py-3 text-sm font-semibold transition">
+                  Go to Feed
+                </Link>
+                <Link href="/post/new" className="btn-secondary rounded-full px-6 py-3 text-sm font-semibold transition hover:bg-[color:rgba(181,214,178,0.38)]">
+                  New Post
+                </Link>
+              </>
+            ) : (
+              <>
+                <SignUpButton mode="modal">
+                  <button className="btn-primary rounded-full px-6 py-3 text-sm font-semibold transition">
+                    Join Simmer
+                  </button>
+                </SignUpButton>
+                <Link href="/feed" className="btn-secondary rounded-full px-6 py-3 text-sm font-semibold transition hover:bg-[color:rgba(181,214,178,0.38)]">
+                  Browse the Feed
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -78,7 +90,7 @@ export default async function LandingPage() {
               <p className="text-sm uppercase tracking-[0.24em] text-[color:rgba(83,19,30,0.68)]">Recent</p>
               <h2 className="font-display text-3xl text-[var(--oxblood)]">From the book</h2>
             </div>
-            <Link href="/dashboard" className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--oxblood)]">
+            <Link href="/feed" className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--oxblood)]">
               Open all
             </Link>
           </div>
