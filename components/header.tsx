@@ -21,6 +21,9 @@ export async function Header() {
           <Link href="/dashboard" className="transition hover:text-[var(--oxblood)]">
             Dashboard
           </Link>
+          <Link href="/search" className="transition hover:text-[var(--oxblood)]">
+            Search
+          </Link>
           {userId ? (
             <>
               <Link

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getPostById } from "@/lib/data";
@@ -25,9 +26,11 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
         <div className="paper-panel space-y-6 rounded-[32px] p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm uppercase tracking-[0.16em] text-[color:rgba(90,70,76,0.72)]">@{post.author.username}</p>
+              <Link href={`/profile/${post.author.username}`} className="text-sm uppercase tracking-[0.16em] text-[color:rgba(90,70,76,0.72)] hover:text-[var(--oxblood)]">
+                @{post.author.username}
+              </Link>
               <h1 className="font-display mt-2 text-4xl leading-none text-[var(--oxblood)]">
-                {post.author.displayName ?? post.author.username}&apos;s dish
+                {post.title}
               </h1>
               <p className="mt-2 text-sm text-[color:rgba(90,70,76,0.72)]">{formatDate(post.createdAt)}</p>
             </div>

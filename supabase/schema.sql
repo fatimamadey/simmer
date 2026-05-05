@@ -39,3 +39,15 @@ create index if not exists post_steps_post_id_idx on post_steps(post_id, sort_or
 insert into storage.buckets (id, name, public)
 values ('recipe-photos', 'recipe-photos', true)
 on conflict (id) do nothing;
+
+-- Milestone 2 migration
+alter table posts add column if not exists title text not null default '';
+alter table posts alter column title drop default;
+
+create table if not exists follows (
+  follower_id  uuid not null references profiles(id) on delete cascade,
+  following_id uuid not null references profiles(id) on delete cascade,
+  created_at   timestamptz not null default timezone('utc', now()),
+  primary key (follower_id, following_id)
+);
+create index if not exists follows_following_id_idx on follows(following_id);

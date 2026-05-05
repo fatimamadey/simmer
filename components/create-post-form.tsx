@@ -69,6 +69,20 @@ export function CreatePostForm() {
 
   return (
     <form action={formAction} className="space-y-8">
+      <div className="space-y-3">
+        <label htmlFor="title" className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:rgba(83,19,30,0.72)]">
+          Dish Name
+        </label>
+        <input
+          id="title"
+          type="text"
+          name="title"
+          placeholder="e.g. Spicy Miso Ramen"
+          className="w-full rounded-[24px] border border-[color:rgba(90,70,76,0.14)] bg-[color:rgba(255,250,204,0.48)] px-4 py-4 text-xl text-[var(--ink)] outline-none transition focus:border-[var(--oxblood)]"
+        />
+        <FieldError errors={state.fieldErrors?.title} />
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="space-y-3">
           <label className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:rgba(83,19,30,0.72)]">Photo</label>

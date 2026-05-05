@@ -6,8 +6,16 @@ export type Profile = {
   avatarUrl: string | null;
 };
 
+export type ProfileStats = Profile & {
+  postCount: number;
+  avgRating: number;
+  followerCount: number;
+  followingCount: number;
+};
+
 export type PostSummary = {
   id: string;
+  title: string;
   rating: number;
   notes: string | null;
   photoUrl: string;
@@ -24,6 +32,7 @@ export type CreatePostState = {
   status: "idle" | "success" | "error";
   message?: string;
   fieldErrors?: {
+    title?: string[];
     rating?: string[];
     notes?: string[];
     photo?: string[];

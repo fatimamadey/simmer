@@ -71,7 +71,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {posts.length ? (
+      {posts.length > 3 ? (
         <section className="mt-16">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
@@ -83,7 +83,7 @@ export default async function LandingPage() {
             </Link>
           </div>
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {posts.slice(0, 3).map((post) => (
+            {posts.slice(3).map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
