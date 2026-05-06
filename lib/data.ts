@@ -207,6 +207,57 @@ export async function searchProfiles(query: string): Promise<Profile[]> {
   }));
 }
 
+export async function ensureProfile(
+  clerkUserId: string,
+  clerkData: {
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    imageUrl: string;
+    emailAddress: string | null;
+  }
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("clerk_user_id", clerkUserId)
+    .maybeSingle();
+
+  if (existing) return;
+
+  const baseUsername = (
+    clerkData.username ??
+    clerkData.emailAddress?.split("@")[0] ??
+    `cook_${clerkUserId.slice(-8)}`
+  )
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")
+    .slice(0, 25);
+
+  const displayName =
+    [clerkData.firstName, clerkData.lastName].filter(Boolean).join(" ") || null;
+
+  let username = baseUsername;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { error } = await supabase.from("profiles").insert({
+      clerk_user_id: clerkUserId,
+      username,
+      display_name: displayName,
+      avatar_url: clerkData.imageUrl || null,
+    });
+
+    if (!error) return;
+    if (error.code === "23505" && error.message.includes("clerk_user_id")) return;
+    if (error.code === "23505") {
+      username = `${baseUsername}_${Math.floor(Math.random() * 9000) + 1000}`;
+      continue;
+    }
+    throw new Error(`Failed to create profile: ${error.message}`);
+  }
+}
+
 export async function upsertProfile(profile: Omit<Profile, "id">) {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase

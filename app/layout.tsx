@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { Playfair_Display, DM_Sans, Caveat } from "next/font/google";
 
 import { Header } from "@/components/header";
+import { getProfileByClerkUserId, ensureProfile } from "@/lib/data";
 import "@/app/globals.css";
 
 const playfair = Playfair_Display({
@@ -26,7 +28,29 @@ export const metadata: Metadata = {
   description: "A social cooking app for honest home-cooked recipe posts."
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { userId } = await auth();
+
+  if (userId) {
+    try {
+      const existing = await getProfileByClerkUserId(userId);
+      if (!existing) {
+        const clerkUser = await currentUser();
+        if (clerkUser) {
+          await ensureProfile(userId, {
+            username: clerkUser.username ?? null,
+            firstName: clerkUser.firstName ?? null,
+            lastName: clerkUser.lastName ?? null,
+            imageUrl: clerkUser.imageUrl,
+            emailAddress: clerkUser.primaryEmailAddress?.emailAddress ?? null,
+          });
+        }
+      }
+    } catch {
+      // Don't crash the page if profile sync fails
+    }
+  }
+
   return (
     <ClerkProvider>
       <html lang="en">
