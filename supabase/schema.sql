@@ -51,3 +51,18 @@ create table if not exists follows (
   primary key (follower_id, following_id)
 );
 create index if not exists follows_following_id_idx on follows(following_id);
+
+-- Security hardening: enable RLS on all user-data tables
+-- Write operations use the service role (bypasses RLS); these policies cover
+-- the anon key so it can never accidentally write data.
+alter table profiles enable row level security;
+alter table posts enable row level security;
+alter table follows enable row level security;
+alter table post_ingredients enable row level security;
+alter table post_steps enable row level security;
+
+create policy "public read profiles"    on profiles        for select using (true);
+create policy "public read posts"       on posts           for select using (true);
+create policy "public read follows"     on follows         for select using (true);
+create policy "public read ingredients" on post_ingredients for select using (true);
+create policy "public read steps"       on post_steps      for select using (true);

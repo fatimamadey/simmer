@@ -46,8 +46,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           });
         }
       }
-    } catch {
-      // Don't crash the page if profile sync fails
+    } catch (err) {
+      console.error("[ensureProfile]", err);
     }
   }
 

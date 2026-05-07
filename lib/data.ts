@@ -189,10 +189,11 @@ export async function isFollowing(followerProfileId: string, followingProfileId:
 
 export async function searchProfiles(query: string): Promise<Profile[]> {
   const supabase = createSupabaseAdminClient();
+  const safe = query.slice(0, 50).replace(/[%_\\]/g, "");
   const { data, error } = await supabase
     .from("profiles")
     .select("id, clerk_user_id, username, display_name, avatar_url")
-    .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+    .or(`username.ilike.%${safe}%,display_name.ilike.%${safe}%`)
     .order("username")
     .limit(20);
 
