@@ -129,14 +129,27 @@ alter table saved_posts enable row level security;
 alter table post_ingredients enable row level security;
 alter table post_steps enable row level security;
 
+create table if not exists comments (
+  id         uuid primary key default gen_random_uuid(),
+  post_id    uuid not null references posts(id) on delete cascade,
+  profile_id uuid not null references profiles(id) on delete cascade,
+  body       text not null check (char_length(btrim(body)) between 1 and 280),
+  created_at timestamptz not null default timezone('utc', now())
+);
+create index if not exists comments_post_id_idx on comments(post_id, created_at asc);
+
+alter table comments enable row level security;
+
 drop policy if exists "public read profiles" on profiles;
 drop policy if exists "public read posts" on posts;
 drop policy if exists "public read follows" on follows;
 drop policy if exists "public read ingredients" on post_ingredients;
 drop policy if exists "public read steps" on post_steps;
+drop policy if exists "public read comments" on comments;
 
 create policy "public read profiles"    on profiles        for select using (true);
 create policy "public read posts"       on posts           for select using (true);
 create policy "public read follows"     on follows         for select using (true);
 create policy "public read ingredients" on post_ingredients for select using (true);
 create policy "public read steps"       on post_steps      for select using (true);
+create policy "public read comments"    on comments        for select using (true);

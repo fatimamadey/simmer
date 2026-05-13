@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase";
-import type { PostDetail, PostSummary, Profile, ProfileStats } from "@/lib/types";
+import type { Comment, PostDetail, PostSummary, Profile, ProfileStats } from "@/lib/types";
 
 type PostRow = {
   id: string;
@@ -51,19 +51,23 @@ function sanitizeSearchTerm(query: string) {
     .trim();
 }
 
-export async function getFeedPosts(): Promise<PostSummary[]> {
+export const FEED_PAGE_SIZE = 12;
+
+export async function getFeedPosts(limit = FEED_PAGE_SIZE): Promise<{ posts: PostSummary[]; hasMore: boolean }> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("posts")
     .select(POST_SELECT)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(limit + 1);
 
   if (error) throw new Error(`Failed to load feed: ${error.message}`);
 
-  return ((data ?? []) as PostRow[]).map(rowToPostSummary);
+  const rows = (data ?? []) as PostRow[];
+  return { posts: rows.slice(0, limit).map(rowToPostSummary), hasMore: rows.length > limit };
 }
 
-export async function getFeedPostsForUser(profileId: string): Promise<PostSummary[]> {
+export async function getFeedPostsForUser(profileId: string, limit = FEED_PAGE_SIZE): Promise<{ posts: PostSummary[]; hasMore: boolean }> {
   const supabase = createSupabaseAdminClient();
 
   const { data: followRows, error: followError } = await supabase
@@ -74,17 +78,19 @@ export async function getFeedPostsForUser(profileId: string): Promise<PostSummar
   if (followError) throw new Error(`Failed to load follows: ${followError.message}`);
 
   const followingIds = (followRows ?? []).map((r) => r.following_id);
-  if (followingIds.length === 0) return [];
+  if (followingIds.length === 0) return { posts: [], hasMore: false };
 
   const { data, error } = await supabase
     .from("posts")
     .select(POST_SELECT)
     .in("profile_id", followingIds)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(limit + 1);
 
   if (error) throw new Error(`Failed to load following feed: ${error.message}`);
 
-  return ((data ?? []) as PostRow[]).map(rowToPostSummary);
+  const rows = (data ?? []) as PostRow[];
+  return { posts: rows.slice(0, limit).map(rowToPostSummary), hasMore: rows.length > limit };
 }
 
 export async function getSavedPostIds(profileId: string, postIds: string[]): Promise<Set<string>> {
@@ -394,4 +400,31 @@ export async function upsertProfile(profile: Omit<Profile, "id">) {
   if (error) throw new Error(`Failed to upsert profile: ${error.message}`);
 
   return data.id as string;
+}
+
+export async function getCommentsForPost(postId: string): Promise<Comment[]> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("comments")
+    .select("id, post_id, profile_id, body, created_at, author:profiles!comments_profile_id_fkey(username, display_name, avatar_url)")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(`Failed to load comments: ${error.message}`);
+
+  return (data ?? []).map((row) => {
+    const author = Array.isArray(row.author) ? row.author[0] : row.author;
+    return {
+      id: row.id,
+      postId: row.post_id,
+      body: row.body,
+      createdAt: row.created_at,
+      authorProfileId: row.profile_id,
+      author: {
+        username: author?.username ?? "cook",
+        displayName: author?.display_name ?? null,
+        avatarUrl: author?.avatar_url ?? null
+      }
+    };
+  });
 }

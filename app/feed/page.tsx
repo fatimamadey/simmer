@@ -2,34 +2,44 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 
 import { PostCard } from "@/components/post-card";
-import { getFeedPosts, getFeedPostsForUser, getProfileByClerkUserId, getSavedPostIds } from "@/lib/data";
+import { FEED_PAGE_SIZE, getFeedPosts, getFeedPostsForUser, getProfileByClerkUserId, getSavedPostIds } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function FeedPage({
   searchParams
 }: {
-  searchParams: Promise<{ feed?: string }>;
+  searchParams: Promise<{ feed?: string; page?: string }>;
 }) {
-  const { feed } = await searchParams;
+  const { feed, page: pageParam } = await searchParams;
   const isFollowingFeed = feed === "following";
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const limit = page * FEED_PAGE_SIZE;
 
   const { userId } = await auth();
 
   const viewerProfile = userId ? await getProfileByClerkUserId(userId) : null;
-  let posts = await getFeedPosts();
+  let posts: Awaited<ReturnType<typeof getFeedPosts>>["posts"] = [];
+  let hasMore = false;
   let showSignInNudge = false;
 
   if (isFollowingFeed) {
     if (!userId) {
       showSignInNudge = true;
-      posts = [];
     } else {
-      posts = viewerProfile ? await getFeedPostsForUser(viewerProfile.id) : [];
+      const result = viewerProfile ? await getFeedPostsForUser(viewerProfile.id, limit) : { posts: [], hasMore: false };
+      posts = result.posts;
+      hasMore = result.hasMore;
     }
+  } else {
+    const result = await getFeedPosts(limit);
+    posts = result.posts;
+    hasMore = result.hasMore;
   }
 
-  const savedPostIds = viewerProfile ? await getSavedPostIds(viewerProfile.id, posts.map((post) => post.id)) : new Set<string>();
+  const savedPostIds = viewerProfile ? await getSavedPostIds(viewerProfile.id, posts.map((p) => p.id)) : new Set<string>();
+
+  const feedBase = isFollowingFeed ? "/feed?feed=following" : "/feed";
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -67,16 +77,28 @@ export default async function FeedPage({
           <p className="mt-2 text-[color:rgba(61,45,51,0.72)]">Follow cooks and their posts will show up here.</p>
         </div>
       ) : posts.length ? (
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              viewerCanSave={Boolean(viewerProfile)}
-              initialIsSaved={savedPostIds.has(post.id)}
-            />
-          ))}
-        </section>
+        <>
+          <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                viewerCanSave={Boolean(viewerProfile)}
+                initialIsSaved={savedPostIds.has(post.id)}
+              />
+            ))}
+          </section>
+          {hasMore ? (
+            <div className="mt-10 text-center">
+              <Link
+                href={`${feedBase}${isFollowingFeed ? "&" : "?"}page=${page + 1}`}
+                className="btn-secondary rounded-full px-7 py-3 text-sm font-semibold transition"
+              >
+                Load more
+              </Link>
+            </div>
+          ) : null}
+        </>
       ) : (
         <div className="paper-panel rounded-[34px] p-14 text-center">
           {isFollowingFeed ? (

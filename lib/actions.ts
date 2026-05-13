@@ -392,3 +392,58 @@ export async function unfollowAction(followingProfileId: string): Promise<void> 
 
   revalidatePath("/feed");
 }
+
+export async function addCommentAction(postId: string, body: string): Promise<{ error?: string }> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Sign in to comment." };
+
+  const trimmed = body.trim();
+  if (!trimmed || trimmed.length > 280) return { error: "Comment must be 1–280 characters." };
+
+  const profile = await getProfileByClerkUserId(userId);
+  if (!profile) return { error: "Profile not found." };
+
+  const supabase = createSupabaseAdminClient();
+
+  const { data: post, error: postError } = await supabase
+    .from("posts")
+    .select("id")
+    .eq("id", postId)
+    .maybeSingle();
+
+  if (postError) return { error: "Could not verify post." };
+  if (!post) return { error: "Post not found." };
+
+  const { error } = await supabase
+    .from("comments")
+    .insert({ post_id: postId, profile_id: profile.id, body: trimmed });
+
+  if (error) return { error: `Could not save comment: ${error.message}` };
+
+  revalidatePath(`/posts/${postId}`);
+  return {};
+}
+
+export async function deleteCommentAction(commentId: string, postId: string): Promise<void> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Not signed in.");
+
+  const profile = await getProfileByClerkUserId(userId);
+  if (!profile) throw new Error("Profile not found.");
+
+  const supabase = createSupabaseAdminClient();
+  const { data: comment, error: fetchError } = await supabase
+    .from("comments")
+    .select("profile_id")
+    .eq("id", commentId)
+    .maybeSingle();
+
+  if (fetchError) throw new Error("Could not load comment.");
+  if (!comment) throw new Error("Comment not found.");
+  if (comment.profile_id !== profile.id) throw new Error("You can only delete your own comments.");
+
+  const { error } = await supabase.from("comments").delete().eq("id", commentId);
+  if (error) throw new Error(`Failed to delete comment: ${error.message}`);
+
+  revalidatePath(`/posts/${postId}`);
+}

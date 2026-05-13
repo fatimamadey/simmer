@@ -29,6 +29,15 @@ export type PostDetail = PostSummary & {
   steps: string[];
 };
 
+export type Comment = {
+  id: string;
+  postId: string;
+  body: string;
+  createdAt: string;
+  author: Pick<Profile, "username" | "displayName" | "avatarUrl">;
+  authorProfileId: string;
+};
+
 export type CreatePostState = {
   status: "idle" | "success" | "error";
   message?: string;

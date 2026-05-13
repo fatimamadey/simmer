@@ -8,7 +8,7 @@ import { getFeedPosts, getProfileByClerkUserId, getSavedPostIds } from "@/lib/da
 export const dynamic = "force-dynamic";
 
 export default async function LandingPage() {
-  const posts = await getFeedPosts();
+  const { posts } = await getFeedPosts(20);
   const featuredPosts = posts.slice(0, 3);
   const { userId } = await auth();
   const viewerProfile = userId ? await getProfileByClerkUserId(userId) : null;

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 
 import { getPostById, getProfileByClerkUserId, isPostSaved } from "@/lib/data";
+import { CommentSection } from "@/components/comment-section";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { RatingPips } from "@/components/rating-pips";
 import { SavePostButton } from "@/components/save-post-button";
@@ -123,6 +124,12 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       </section>
+
+      <CommentSection
+        postId={post.id}
+        viewerProfileId={viewerProfile?.id ?? null}
+        isSignedIn={!!userId}
+      />
     </main>
   );
 }

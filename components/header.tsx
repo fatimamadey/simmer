@@ -3,9 +3,11 @@ import { SignInButton, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 
 import { LogoMark } from "@/components/logo-mark";
+import { getProfileByClerkUserId } from "@/lib/data";
 
 export async function Header() {
   const { userId } = await auth();
+  const viewerProfile = userId ? await getProfileByClerkUserId(userId) : null;
 
   return (
     <header className="sticky top-0 z-20 border-b border-[color:rgba(83,19,30,0.07)] bg-[color:rgba(253,248,238,0.88)] backdrop-blur">
@@ -18,19 +20,28 @@ export async function Header() {
           <Link href="/feed" className="transition hover:text-[var(--oxblood)]">
             Feed
           </Link>
-          <Link href="/search" className="transition hover:text-[var(--oxblood)]">
+          <Link href="/search" className="hidden transition hover:text-[var(--oxblood)] sm:block">
             Search
           </Link>
           {userId ? (
             <>
-              <Link href="/saved" className="transition hover:text-[var(--oxblood)]">
+              <Link href="/saved" className="hidden transition hover:text-[var(--oxblood)] sm:block">
                 Saved
               </Link>
+              {viewerProfile ? (
+                <Link
+                  href={`/profile/${viewerProfile.username}`}
+                  className="hidden transition hover:text-[var(--oxblood)] sm:block"
+                >
+                  Profile
+                </Link>
+              ) : null}
               <Link
                 href="/post/new"
                 className="btn-primary rounded-full px-4 py-2 text-sm font-semibold transition"
               >
-                New Post
+                <span className="hidden sm:inline">New Post</span>
+                <span className="sm:hidden">+</span>
               </Link>
               <UserButton />
             </>
