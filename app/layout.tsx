@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { Playfair_Display, DM_Sans, Caveat } from "next/font/google";
@@ -25,7 +25,16 @@ const caveat = Caveat({
 
 export const metadata: Metadata = {
   title: "Simmer",
-  description: "A social cooking app for honest home-cooked recipe posts."
+  description: "A social cooking app for honest home-cooked recipe posts.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/simmer-mark.svg"
+  }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#53131E"
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 
-import { getProfileByUsername, getPostsByProfileId, isFollowing, getProfileByClerkUserId } from "@/lib/data";
+import { getProfileByUsername, getPostsByProfileId, isFollowing, getProfileByClerkUserId, getSavedPostIds } from "@/lib/data";
 import { PostCard } from "@/components/post-card";
 import { FollowButton } from "@/components/follow-button";
 
@@ -24,6 +24,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const viewerIsFollowing = !isOwnProfile && viewerProfile
     ? await isFollowing(viewerProfile.id, profile.id)
     : false;
+  const savedPostIds = viewerProfile ? await getSavedPostIds(viewerProfile.id, posts.map((post) => post.id)) : new Set<string>();
 
   const initials = (profile.displayName ?? profile.username).slice(0, 2).toUpperCase();
 
@@ -83,7 +84,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       {posts.length ? (
         <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard
+              key={post.id}
+              post={post}
+              viewerCanSave={Boolean(viewerProfile)}
+              initialIsSaved={savedPostIds.has(post.id)}
+            />
           ))}
         </section>
       ) : (

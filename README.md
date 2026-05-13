@@ -6,7 +6,10 @@ Milestone 1 implementation for the core cooking loop:
 - Supabase-backed recipe posts
 - Image upload to Supabase Storage
 - Public newest-first feed
+- Following feed and saved recipes
+- Profile search and recipe search
 - Post detail pages with ingredients and steps
+- Logo, favicon, and PWA manifest metadata
 
 ## Environment variables
 
@@ -27,6 +30,14 @@ npm install
 npm run dev
 ```
 
+Useful checks:
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
+
 ## Supabase setup
 
-Run the SQL in `supabase/schema.sql`, then make sure the `recipe-photos` bucket exists and is public.
+Run the SQL in `supabase/schema.sql`, then make sure the `recipe-photos` bucket exists and is public. Re-run the schema after pulling changes so the `saved_posts` table and database constraints exist before using saved recipes.

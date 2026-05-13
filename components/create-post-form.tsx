@@ -6,6 +6,8 @@ import { createPostAction } from "@/lib/actions";
 import type { CreatePostState } from "@/lib/types";
 import { SubmitButton } from "@/components/submit-button";
 import { RepeaterField } from "@/components/repeater-field";
+import { PhotoUploadField } from "@/components/photo-upload-field";
+import { RatingInput } from "@/components/rating-input";
 
 const initialState: CreatePostState = {
   status: "idle"
@@ -38,31 +40,14 @@ export function CreatePostForm() {
         <FieldError errors={state.fieldErrors?.title} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
         <div className="space-y-3">
-          <label className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:rgba(83,19,30,0.72)]">Photo</label>
-          <input
-            type="file"
-            name="photo"
-            accept="image/*"
-            className="block w-full rounded-[24px] border border-dashed border-[color:rgba(83,19,30,0.22)] bg-[color:rgba(255,250,204,0.44)] px-4 py-10 text-sm text-[color:rgba(90,70,76,0.78)] file:mr-4 file:rounded-full file:border-0 file:bg-[var(--oxblood)] file:px-4 file:py-2 file:font-semibold file:text-[var(--cream)]"
-          />
+          <PhotoUploadField />
           <FieldError errors={state.fieldErrors?.photo} />
         </div>
 
         <div className="space-y-3">
-          <label htmlFor="rating" className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:rgba(83,19,30,0.72)]">
-            Rating
-          </label>
-          <input
-            id="rating"
-            type="number"
-            name="rating"
-            min={1}
-            max={10}
-            placeholder="7"
-            className="w-full rounded-[24px] border border-[color:rgba(90,70,76,0.14)] bg-[color:rgba(181,214,178,0.34)] px-4 py-4 text-4xl font-black text-[var(--oxblood)] outline-none transition focus:border-[var(--oxblood)]"
-          />
+          <RatingInput />
           <FieldError errors={state.fieldErrors?.rating} />
         </div>
       </div>

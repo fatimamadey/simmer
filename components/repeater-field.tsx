@@ -39,7 +39,7 @@ export function RepeaterField({ name, label, placeholder, initialValues }: Repea
                 onClick={() => setItems((current) => current.filter((_, i) => i !== index))}
                 className="rounded-2xl border border-[color:rgba(90,70,76,0.14)] px-4 py-3 text-sm text-[color:rgba(90,70,76,0.78)]"
               >
-                Cut
+                Remove
               </button>
             ) : null}
           </div>

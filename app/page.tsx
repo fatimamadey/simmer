@@ -3,7 +3,7 @@ import { SignUpButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 
 import { PostCard } from "@/components/post-card";
-import { getFeedPosts } from "@/lib/data";
+import { getFeedPosts, getProfileByClerkUserId, getSavedPostIds } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,8 @@ export default async function LandingPage() {
   const posts = await getFeedPosts();
   const featuredPosts = posts.slice(0, 3);
   const { userId } = await auth();
+  const viewerProfile = userId ? await getProfileByClerkUserId(userId) : null;
+  const savedPostIds = viewerProfile ? await getSavedPostIds(viewerProfile.id, posts.map((post) => post.id)) : new Set<string>();
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
@@ -96,7 +98,12 @@ export default async function LandingPage() {
           </div>
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {posts.slice(3).map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard
+                key={post.id}
+                post={post}
+                viewerCanSave={Boolean(viewerProfile)}
+                initialIsSaved={savedPostIds.has(post.id)}
+              />
             ))}
           </div>
         </section>

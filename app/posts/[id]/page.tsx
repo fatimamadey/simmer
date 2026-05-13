@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 
-import { getPostById, getProfileByClerkUserId } from "@/lib/data";
+import { getPostById, getProfileByClerkUserId, isPostSaved } from "@/lib/data";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { RatingPips } from "@/components/rating-pips";
+import { SavePostButton } from "@/components/save-post-button";
 
 function formatDate(dateString: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -26,6 +27,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
   if (!post) notFound();
 
   const isAuthor = viewerProfile?.id === post.authorProfileId;
+  const initialIsSaved = viewerProfile ? await isPostSaved(viewerProfile.id, post.id) : false;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
@@ -33,14 +35,17 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
         <Link href="/feed" className="text-sm font-medium tracking-wide text-[color:rgba(90,70,76,0.65)] hover:text-[var(--oxblood)]">
           ← Feed
         </Link>
-        {isAuthor ? (
-          <div className="flex items-center gap-3">
-            <Link href={`/post/${post.id}/edit`} className="btn-secondary rounded-full px-4 py-2 text-sm transition">
-              Edit
-            </Link>
-            <DeletePostButton postId={post.id} />
-          </div>
-        ) : null}
+        <div className="flex items-center gap-3">
+          {viewerProfile ? <SavePostButton postId={post.id} initialIsSaved={initialIsSaved} /> : null}
+          {isAuthor ? (
+            <>
+              <Link href={`/post/${post.id}/edit`} className="btn-secondary rounded-full px-4 py-2 text-sm transition">
+                Edit
+              </Link>
+              <DeletePostButton postId={post.id} />
+            </>
+          ) : null}
+        </div>
       </div>
 
       <section className="grid gap-8 lg:grid-cols-[1fr_0.92fr]">
@@ -91,9 +96,9 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
             <section>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:rgba(83,19,30,0.6)]">Ingredients</p>
               <ul className="mt-3 space-y-2">
-                {post.ingredients.map((ingredient) => (
+                {post.ingredients.map((ingredient, index) => (
                   <li
-                    key={ingredient}
+                    key={`${index}-${ingredient}`}
                     className="paper-inset rounded-[14px] bg-[color:rgba(181,214,178,0.35)] px-4 py-2.5 text-sm text-[var(--ink)]"
                   >
                     {ingredient}

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { PostSummary } from "@/lib/types";
 import { RatingPips } from "@/components/rating-pips";
+import { SavePostButton } from "@/components/save-post-button";
 
 function formatDate(dateString: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -10,7 +11,13 @@ function formatDate(dateString: string) {
   }).format(new Date(dateString));
 }
 
-export function PostCard({ post }: { post: PostSummary }) {
+type PostCardProps = {
+  post: PostSummary;
+  viewerCanSave?: boolean;
+  initialIsSaved?: boolean;
+};
+
+export function PostCard({ post, viewerCanSave = false, initialIsSaved = false }: PostCardProps) {
   return (
     <article className="recipe-card paper-panel relative overflow-hidden rounded-[22px]">
       <Link href={`/posts/${post.id}`} className="absolute inset-0 z-0 rounded-[22px]" aria-label={post.title} />
@@ -40,7 +47,10 @@ export function PostCard({ post }: { post: PostSummary }) {
           </p>
         ) : null}
 
-        <p className="text-xs font-medium text-[color:rgba(90,70,76,0.55)]">{formatDate(post.createdAt)}</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-medium text-[color:rgba(90,70,76,0.55)]">{formatDate(post.createdAt)}</p>
+          {viewerCanSave ? <SavePostButton postId={post.id} initialIsSaved={initialIsSaved} compact /> : null}
+        </div>
       </div>
     </article>
   );

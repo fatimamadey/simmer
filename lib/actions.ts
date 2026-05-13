@@ -4,10 +4,10 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { upsertProfile, getProfileByClerkUserId, getPostById } from "@/lib/data";
+import { ensureProfile, getProfileByClerkUserId, getPostById } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase";
 import type { CreatePostState } from "@/lib/types";
-import { createPostSchema } from "@/lib/validation";
+import { ALLOWED_PHOTO_TYPES, MAX_PHOTO_SIZE_BYTES, createPostSchema } from "@/lib/validation";
 
 const initialState: CreatePostState = {
   status: "idle"
@@ -20,6 +20,45 @@ function parseRepeatedField(formData: FormData, fieldName: string) {
     .filter(Boolean);
 }
 
+const photoExtensions: Record<(typeof ALLOWED_PHOTO_TYPES)[number], string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp"
+};
+
+function formatFileSize(bytes: number) {
+  return `${Math.round(bytes / 1024 / 1024)}MB`;
+}
+
+function validatePhoto(photo: FormDataEntryValue | null, required: boolean) {
+  if (!(photo instanceof File) || photo.size === 0) {
+    return required
+      ? { error: "Add one photo for the dish." }
+      : { file: null };
+  }
+
+  if (!ALLOWED_PHOTO_TYPES.includes(photo.type as (typeof ALLOWED_PHOTO_TYPES)[number])) {
+    return { error: "Upload a JPG, PNG, or WebP image." };
+  }
+
+  if (photo.size > MAX_PHOTO_SIZE_BYTES) {
+    return { error: `Keep photos under ${formatFileSize(MAX_PHOTO_SIZE_BYTES)}.` };
+  }
+
+  return { file: photo };
+}
+
+function storagePathForPhoto(userId: string, photo: File) {
+  const fileExt = photoExtensions[photo.type as (typeof ALLOWED_PHOTO_TYPES)[number]];
+  return `${userId}/${crypto.randomUUID()}.${fileExt}`;
+}
+
+function storagePathFromPublicUrl(photoUrl: string) {
+  const marker = "/recipe-photos/";
+  const path = photoUrl.split(marker)[1]?.split("?")[0];
+  return path ? decodeURIComponent(path) : null;
+}
+
 export async function createPostAction(
   _previousState: CreatePostState = initialState,
   formData: FormData
@@ -30,7 +69,7 @@ export async function createPostAction(
     return { status: "error", message: "You need to sign in before posting." };
   }
 
-  const photo = formData.get("photo");
+  const photoResult = validatePhoto(formData.get("photo"), true);
   const parsed = createPostSchema.safeParse({
     title: formData.get("title")?.toString() ?? "",
     rating: formData.get("rating"),
@@ -39,12 +78,8 @@ export async function createPostAction(
     steps: parseRepeatedField(formData, "steps")
   });
 
-  if (!(photo instanceof File) || photo.size === 0) {
-    return { status: "error", fieldErrors: { photo: ["Add one photo for the dish."] } };
-  }
-
-  if (!photo.type.startsWith("image/")) {
-    return { status: "error", fieldErrors: { photo: ["The uploaded file must be an image."] } };
+  if (photoResult.error) {
+    return { status: "error", fieldErrors: { photo: [photoResult.error] } };
   }
 
   if (!parsed.success) {
@@ -57,22 +92,27 @@ export async function createPostAction(
     return { status: "error", message: "Could not load your profile. Try signing in again." };
   }
 
-  const supabase = createSupabaseAdminClient();
-  const username =
-    clerkUser.username ??
-    clerkUser.primaryEmailAddress?.emailAddress.split("@")[0] ??
-    `cook-${userId.slice(0, 8)}`;
-  const displayName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || null;
-
-  const profileId = await upsertProfile({
-    clerkUserId: userId,
-    username,
-    displayName,
-    avatarUrl: clerkUser.imageUrl ?? null
+  await ensureProfile(userId, {
+    username: clerkUser.username ?? null,
+    firstName: clerkUser.firstName ?? null,
+    lastName: clerkUser.lastName ?? null,
+    imageUrl: clerkUser.imageUrl,
+    emailAddress: clerkUser.primaryEmailAddress?.emailAddress ?? null
   });
 
-  const fileExt = photo.name.split(".").pop() || "jpg";
-  const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
+  const profile = await getProfileByClerkUserId(userId);
+
+  if (!profile) {
+    return { status: "error", message: "Could not load your profile. Try signing in again." };
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const photo = photoResult.file;
+  if (!photo) {
+    return { status: "error", fieldErrors: { photo: ["Add one photo for the dish."] } };
+  }
+
+  const filePath = storagePathForPhoto(userId, photo);
   const fileBuffer = Buffer.from(await photo.arrayBuffer());
 
   const { error: uploadError } = await supabase.storage.from("recipe-photos").upload(filePath, fileBuffer, {
@@ -89,7 +129,7 @@ export async function createPostAction(
   const { data: postRow, error: postError } = await supabase
     .from("posts")
     .insert({
-      profile_id: profileId,
+      profile_id: profile.id,
       title: parsed.data.title,
       rating: parsed.data.rating,
       notes: parsed.data.notes || null,
@@ -99,6 +139,7 @@ export async function createPostAction(
     .single();
 
   if (postError) {
+    await supabase.storage.from("recipe-photos").remove([filePath]);
     return { status: "error", message: `Could not save the recipe post: ${postError.message}` };
   }
 
@@ -119,6 +160,11 @@ export async function createPostAction(
   ]);
 
   if (ingredientError || stepError) {
+    await Promise.all([
+      supabase.from("posts").delete().eq("id", postRow.id),
+      supabase.storage.from("recipe-photos").remove([filePath])
+    ]);
+
     return {
       status: "error",
       message: ingredientError?.message || stepError?.message || "Could not save the recipe details."
@@ -157,15 +203,17 @@ export async function updatePostAction(
 
   const supabase = createSupabaseAdminClient();
 
-  const photo = formData.get("photo");
-  let photoUrl = post.photoUrl;
+  const photoResult = validatePhoto(formData.get("photo"), false);
+  if (photoResult.error) {
+    return { status: "error", fieldErrors: { photo: [photoResult.error] } };
+  }
 
-  if (photo instanceof File && photo.size > 0) {
-    if (!photo.type.startsWith("image/")) {
-      return { status: "error", fieldErrors: { photo: ["The uploaded file must be an image."] } };
-    }
-    const fileExt = photo.name.split(".").pop() || "jpg";
-    const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
+  let photoUrl = post.photoUrl;
+  let newStoragePath: string | null = null;
+
+  if (photoResult.file) {
+    const photo = photoResult.file;
+    const filePath = storagePathForPhoto(userId, photo);
     const fileBuffer = Buffer.from(await photo.arrayBuffer());
 
     const { error: uploadError } = await supabase.storage.from("recipe-photos").upload(filePath, fileBuffer, {
@@ -176,6 +224,7 @@ export async function updatePostAction(
 
     const { data: publicUrlData } = supabase.storage.from("recipe-photos").getPublicUrl(filePath);
     photoUrl = publicUrlData.publicUrl;
+    newStoragePath = filePath;
   }
 
   const { error: postError } = await supabase
@@ -183,12 +232,21 @@ export async function updatePostAction(
     .update({ title: parsed.data.title, rating: parsed.data.rating, notes: parsed.data.notes || null, photo_url: photoUrl })
     .eq("id", postId);
 
-  if (postError) return { status: "error", message: `Could not update the post: ${postError.message}` };
+  if (postError) {
+    if (newStoragePath) {
+      await supabase.storage.from("recipe-photos").remove([newStoragePath]);
+    }
+    return { status: "error", message: `Could not update the post: ${postError.message}` };
+  }
 
-  await Promise.all([
+  const [{ error: deleteIngredientsError }, { error: deleteStepsError }] = await Promise.all([
     supabase.from("post_ingredients").delete().eq("post_id", postId),
     supabase.from("post_steps").delete().eq("post_id", postId)
   ]);
+
+  if (deleteIngredientsError || deleteStepsError) {
+    return { status: "error", message: "Could not replace the recipe details." };
+  }
 
   const ingredientRows = parsed.data.ingredients.map((content, index) => ({ post_id: postId, content, sort_order: index }));
   const stepRows = parsed.data.steps.map((content, index) => ({ post_id: postId, content, sort_order: index }));
@@ -200,6 +258,13 @@ export async function updatePostAction(
 
   if (ingredientError || stepError) {
     return { status: "error", message: "Could not save the recipe details." };
+  }
+
+  if (newStoragePath) {
+    const oldStoragePath = storagePathFromPublicUrl(post.photoUrl);
+    if (oldStoragePath) {
+      await supabase.storage.from("recipe-photos").remove([oldStoragePath]);
+    }
   }
 
   revalidatePath("/");
@@ -220,7 +285,7 @@ export async function deletePostAction(postId: string): Promise<void> {
 
   const supabase = createSupabaseAdminClient();
 
-  const storagePath = post.photoUrl.split("/recipe-photos/")[1];
+  const storagePath = storagePathFromPublicUrl(post.photoUrl);
   if (storagePath) {
     await supabase.storage.from("recipe-photos").remove([storagePath]);
   }
@@ -239,8 +304,18 @@ export async function followAction(followingProfileId: string): Promise<void> {
 
   const profile = await getProfileByClerkUserId(userId);
   if (!profile) throw new Error("Profile not found.");
+  if (followingProfileId === profile.id) throw new Error("You cannot follow yourself.");
 
   const supabase = createSupabaseAdminClient();
+  const { data: targetProfile, error: targetError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", followingProfileId)
+    .maybeSingle();
+
+  if (targetError) throw new Error(`Failed to load profile: ${targetError.message}`);
+  if (!targetProfile) throw new Error("Profile not found.");
+
   const { error } = await supabase
     .from("follows")
     .upsert({ follower_id: profile.id, following_id: followingProfileId }, { onConflict: "follower_id,following_id" });
@@ -248,6 +323,55 @@ export async function followAction(followingProfileId: string): Promise<void> {
   if (error) throw new Error(`Failed to follow: ${error.message}`);
 
   revalidatePath("/feed");
+}
+
+export async function savePostAction(postId: string): Promise<void> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Not signed in.");
+
+  const profile = await getProfileByClerkUserId(userId);
+  if (!profile) throw new Error("Profile not found.");
+
+  const supabase = createSupabaseAdminClient();
+  const { data: post, error: postError } = await supabase
+    .from("posts")
+    .select("id")
+    .eq("id", postId)
+    .maybeSingle();
+
+  if (postError) throw new Error(`Failed to load post: ${postError.message}`);
+  if (!post) throw new Error("Post not found.");
+
+  const { error } = await supabase
+    .from("saved_posts")
+    .upsert({ profile_id: profile.id, post_id: postId }, { onConflict: "profile_id,post_id" });
+
+  if (error) throw new Error(`Failed to save recipe: ${error.message}`);
+
+  revalidatePath("/saved");
+  revalidatePath("/feed");
+  revalidatePath(`/posts/${postId}`);
+}
+
+export async function unsavePostAction(postId: string): Promise<void> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Not signed in.");
+
+  const profile = await getProfileByClerkUserId(userId);
+  if (!profile) throw new Error("Profile not found.");
+
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("saved_posts")
+    .delete()
+    .eq("profile_id", profile.id)
+    .eq("post_id", postId);
+
+  if (error) throw new Error(`Failed to unsave recipe: ${error.message}`);
+
+  revalidatePath("/saved");
+  revalidatePath("/feed");
+  revalidatePath(`/posts/${postId}`);
 }
 
 export async function unfollowAction(followingProfileId: string): Promise<void> {

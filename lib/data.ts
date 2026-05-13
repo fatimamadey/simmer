@@ -11,13 +11,21 @@ type PostRow = {
   notes: string | null;
   photo_url: string;
   created_at: string;
-  profiles: Array<{
-    username: string;
-    display_name: string | null;
-  }> | null;
+  author_profile:
+    | {
+        username: string;
+        display_name: string | null;
+      }
+    | Array<{
+        username: string;
+        display_name: string | null;
+      }>
+    | null;
 };
 
 function rowToPostSummary(row: PostRow): PostSummary {
+  const authorProfile = Array.isArray(row.author_profile) ? row.author_profile[0] : row.author_profile;
+
   return {
     id: row.id,
     title: row.title,
@@ -26,13 +34,22 @@ function rowToPostSummary(row: PostRow): PostSummary {
     photoUrl: row.photo_url,
     createdAt: row.created_at,
     author: {
-      username: row.profiles?.[0]?.username ?? "cook",
-      displayName: row.profiles?.[0]?.display_name ?? null
+      username: authorProfile?.username ?? "cook",
+      displayName: authorProfile?.display_name ?? null
     }
   };
 }
 
-const POST_SELECT = "id, profile_id, title, rating, notes, photo_url, created_at, profiles(username, display_name)";
+const POST_SELECT =
+  "id, profile_id, title, rating, notes, photo_url, created_at, author_profile:profiles!posts_profile_id_fkey(username, display_name)";
+
+function sanitizeSearchTerm(query: string) {
+  return query
+    .slice(0, 50)
+    .replace(/[^a-zA-Z0-9\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export async function getFeedPosts(): Promise<PostSummary[]> {
   const supabase = createSupabaseAdminClient();
@@ -68,6 +85,55 @@ export async function getFeedPostsForUser(profileId: string): Promise<PostSummar
   if (error) throw new Error(`Failed to load following feed: ${error.message}`);
 
   return ((data ?? []) as PostRow[]).map(rowToPostSummary);
+}
+
+export async function getSavedPostIds(profileId: string, postIds: string[]): Promise<Set<string>> {
+  if (postIds.length === 0) return new Set();
+
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("saved_posts")
+    .select("post_id")
+    .eq("profile_id", profileId)
+    .in("post_id", postIds);
+
+  if (error) throw new Error(`Failed to load saved posts: ${error.message}`);
+
+  return new Set((data ?? []).map((row) => row.post_id as string));
+}
+
+export async function isPostSaved(profileId: string, postId: string): Promise<boolean> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("saved_posts")
+    .select("post_id")
+    .eq("profile_id", profileId)
+    .eq("post_id", postId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to check saved post: ${error.message}`);
+  return data !== null;
+}
+
+export async function getSavedPostsForUser(profileId: string): Promise<PostSummary[]> {
+  const supabase = createSupabaseAdminClient();
+  const { data: savedRows, error: savedError } = await supabase
+    .from("saved_posts")
+    .select("post_id")
+    .eq("profile_id", profileId)
+    .order("created_at", { ascending: false });
+
+  if (savedError) throw new Error(`Failed to load saved posts: ${savedError.message}`);
+
+  const postIds = (savedRows ?? []).map((row) => row.post_id as string);
+  if (postIds.length === 0) return [];
+
+  const { data, error } = await supabase.from("posts").select(POST_SELECT).in("id", postIds);
+
+  if (error) throw new Error(`Failed to load saved recipes: ${error.message}`);
+
+  const postsById = new Map(((data ?? []) as PostRow[]).map((row) => [row.id, rowToPostSummary(row)]));
+  return postIds.map((postId) => postsById.get(postId)).filter((post): post is PostSummary => Boolean(post));
 }
 
 export async function getPostById(postId: string): Promise<PostDetail | null> {
@@ -189,7 +255,9 @@ export async function isFollowing(followerProfileId: string, followingProfileId:
 
 export async function searchProfiles(query: string): Promise<Profile[]> {
   const supabase = createSupabaseAdminClient();
-  const safe = query.slice(0, 50).replace(/[%_\\]/g, "");
+  const safe = sanitizeSearchTerm(query);
+  if (!safe) return [];
+
   const { data, error } = await supabase
     .from("profiles")
     .select("id, clerk_user_id, username, display_name, avatar_url")
@@ -206,6 +274,52 @@ export async function searchProfiles(query: string): Promise<Profile[]> {
     displayName: row.display_name,
     avatarUrl: row.avatar_url
   }));
+}
+
+export async function searchPosts(query: string): Promise<PostSummary[]> {
+  const supabase = createSupabaseAdminClient();
+  const safe = sanitizeSearchTerm(query);
+  if (!safe) return [];
+
+  const [
+    { data: directMatches, error: directError },
+    { data: ingredientMatches, error: ingredientError }
+  ] = await Promise.all([
+    supabase
+      .from("posts")
+      .select(POST_SELECT)
+      .or(`title.ilike.%${safe}%,notes.ilike.%${safe}%`)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("post_ingredients")
+      .select("post_id")
+      .ilike("content", `%${safe}%`)
+      .limit(20)
+  ]);
+
+  if (directError) throw new Error(`Failed to search recipes: ${directError.message}`);
+  if (ingredientError) throw new Error(`Failed to search ingredients: ${ingredientError.message}`);
+
+  const ingredientPostIds = Array.from(new Set((ingredientMatches ?? []).map((row) => row.post_id as string)));
+  const directRows = (directMatches ?? []) as PostRow[];
+
+  if (ingredientPostIds.length === 0) return directRows.map(rowToPostSummary);
+
+  const seen = new Set(directRows.map((row) => row.id));
+  const missingIngredientPostIds = ingredientPostIds.filter((postId) => !seen.has(postId));
+
+  if (missingIngredientPostIds.length === 0) return directRows.map(rowToPostSummary);
+
+  const { data: ingredientPosts, error: ingredientPostError } = await supabase
+    .from("posts")
+    .select(POST_SELECT)
+    .in("id", missingIngredientPostIds)
+    .order("created_at", { ascending: false });
+
+  if (ingredientPostError) throw new Error(`Failed to load ingredient matches: ${ingredientPostError.message}`);
+
+  return [...directRows, ...((ingredientPosts ?? []) as PostRow[])].slice(0, 20).map(rowToPostSummary);
 }
 
 export async function ensureProfile(
@@ -228,7 +342,7 @@ export async function ensureProfile(
 
   if (existing) return;
 
-  const baseUsername = (
+  const normalizedBaseUsername = (
     clerkData.username ??
     clerkData.emailAddress?.split("@")[0] ??
     `cook_${clerkUserId.slice(-8)}`
@@ -236,6 +350,8 @@ export async function ensureProfile(
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, "_")
     .slice(0, 25);
+  const fallbackUsername = `cook_${clerkUserId.slice(-8).replace(/[^a-z0-9_]/gi, "_").toLowerCase()}`;
+  const baseUsername = normalizedBaseUsername.length >= 2 ? normalizedBaseUsername : fallbackUsername;
 
   const displayName =
     [clerkData.firstName, clerkData.lastName].filter(Boolean).join(" ") || null;
@@ -252,7 +368,7 @@ export async function ensureProfile(
     if (!error) return;
     if (error.code === "23505" && error.message.includes("clerk_user_id")) return;
     if (error.code === "23505") {
-      username = `${baseUsername}_${Math.floor(Math.random() * 9000) + 1000}`;
+      username = `${baseUsername.slice(0, 20)}_${Math.floor(Math.random() * 9000) + 1000}`;
       continue;
     }
     throw new Error(`Failed to create profile: ${error.message}`);
